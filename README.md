@@ -1,5 +1,6 @@
 # hello-world-2
 Another repository
+Uploaded a script where I worked on the Titanic data set.
 
 
 Hello! My name means ocean in Turkish, and I like the color blue!
