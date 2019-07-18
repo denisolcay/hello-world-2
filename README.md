@@ -1,5 +1,5 @@
 # hello-world-2
-Uploaded a script where I worked on the Titanic data set.
+Uploaded a R script where I worked on the Titanic data set.
 
 
 Hello! My name means ocean in Turkish, and I like the color blue!
