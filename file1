@@ -1,0 +1,289 @@
+
+#1. Get your working directory
+getwd()
+#2. If it isn't set, set it:
+setwd("C:/Users/ddeni/Documents/R/Titanic Project/Titanic Project")
+#2b. You can make a project folder ahead of time to make it easier
+# and make sure to put your data sets in the folder, too.
+
+#3. Import the data
+#3a. Import the "training" data from Kaggle
+#TIP: Make sure stringsAsFactors and header are set. This will help with issues later on
+#header makes it so that the column names aren't used in the queries
+#stringsAsFactors indicates whether or not the data should be considered a string or a factor
+#(a string is a character variable that contains one or more character)
+titanic.train <- read.csv("train.csv", stringsAsFactors = FALSE, header = TRUE)
+#3b. Import the "test" data, to which we will test predictions against the train set
+titanic.test <- read.csv("test.csv", stringsAsFactors = FALSE, header = TRUE)
+
+#4. Explore your data
+#4a. Lets start with titanic.train
+head(titanic.train) #first 6 rows
+tail(titanic.train) #last 6 rows
+str(titanic.train) #structure
+summary(titanic.train) #summary: NAs found in Age
+table(is.na(titanic.train)) #table of NAs: T or F | 177 NAs
+table(is.na(titanic.train$Age)) #all 177 in Age
+median(titanic.train$Age, na.rm = TRUE) #median Age is 28
+mean(titanic.train$Age, na.rm = TRUE) #mean Age is 30
+median(titanic.train$Fare) #median Fare $14.45
+mean(titanic.train$Fare) #mean Fare $32.20
+ncol(titanic.train) #12 columns
+nrow(titanic.train) #891 rows
+names(titanic.train) 
+
+#Lets look at the test set
+head(titanic.test)
+tail(titanic.test)
+str(titanic.test)
+summary(titanic.test) #1 NA in Fare
+ncol(titanic.test) #11 columns
+names(titanic.test)
+
+#Lets compare names
+names(titanic.train)
+names(titanic.test)
+#Test is missing Survived
+
+#Add a Survived column to the train set, so we can combine them later
+titanic.test$Survived[titanic.test$Survived <- NA]
+
+#check to see if Survived is there
+names(titanic.test) #yep, its there
+
+#check to see there is NA in Survived
+table(is.na(titanic.test$Survived)) #they are all NA
+
+#now we want to make a column for each, indicating what data set they are,
+#that way we can separate them afterwards
+titanic.train$IsTrainSet <- TRUE
+titanic.test$IsTrainSet <- !TRUE
+
+#check the outcome
+head(titanic.train)
+tail(titanic.train)
+head(titanic.test)
+tail(titanic.test)
+ncol(titanic.train) #13
+ncol(titanic.test) #13 - all set! they match.
+
+#ok, all of the tests are set to IsTrainSet FALSE, while all the train are set to TRUE
+
+#now that they have the same amount of columns and are identified by set, 
+#we can combine the data sets
+titanic.combined <- rbind(titanic.train, titanic.test)
+
+#lets check it out
+head(titanic.combined)
+tail(titanic.combined)
+      
+#there are 1309 observations. lets check that it adds up 
+418 + 891 #and it does!
+
+#more exploration
+str(titanic.combined)
+names(titanic.combined)
+ncol(titanic.combined) #13 columns
+nrow(titanic.combined) #1309 rows
+
+#5. Time to clean the data
+
+#Age had a lot of NAs 
+#lets address it by assigning the median for now
+table(is.na(titanic.combined)) #682 NAs all combined, wow
+table(is.na(titanic.combined$Age)) #263 ages are NA
+
+medianAge <- median(titanic.combined$Age, na.rm = TRUE) #28
+
+#assign the medianAge to the titanic.combined$Age where NA is true
+titanic.combined[(is.na(titanic.combined$Age)), "Age"] <- medianAge
+
+#check
+table(is.na(titanic.combined$Age)) #it worked
+str(titanic.combined)
+summary(titanic.combined)
+
+
+#look into fare
+table(is.na(titanic.combined$Fare)) #1 na
+
+#find the median fare
+median(titanic.combined$Fare, na.rm = TRUE) #14.45
+
+#make medianFare an object
+medianFare <- median(titanic.combined$Fare, na.rm = TRUE)
+
+#replace Fare NA with median
+titanic.combined[is.na(titanic.combined$Fare), "Fare"] <- medianFare
+
+#check
+table(is.na(titanic.combined$Fare)) #worked
+summary(titanic.combined)
+
+#check for missing values in other categories
+#look at category names
+names(titanic.combined)
+
+#now check for missing values
+table(is.na(titanic.combined$PassengerId))
+table(is.na(titanic.combined$Survived)) #missing 418, which we had assigned
+table(is.na(titanic.combined$Pclass)) 
+table(is.na(titanic.combined$Name))
+table(is.na(titanic.combined$Sex))
+table(is.na(titanic.combined$Age))
+table(is.na(titanic.combined$SibSp))
+table(is.na(titanic.combined$Parch))
+table(is.na(titanic.combined$Ticket))
+table(is.na(titanic.combined$Fare))
+table(is.na(titanic.combined$Cabin))
+table(is.na(titanic.combined$Embarked))
+table(is.na(titanic.combined$IsTrainSet))
+
+table(titanic.combined$Embarked) #missing 2 values
+table(titanic.combined$PassengerId) #one unique Id for each passenger
+table(titanic.combined$Pclass) #First:323, Second: 277; Third: 709
+table(titanic.combined$Sex) #466 Female; 843 Male
+table(titanic.combined$Age) 
+range(titanic.combined$Age) #Range: 0.17 - 80 years
+table(titanic.combined$SibSp)#More passengers with no/1 Sibling/Spouse
+table(titanic.combined$Parch) #More passengers with no Parent/Child
+table(titanic.combined$Ticket)#Most people seem to have a unique ticket, but not all
+unique(titanic.combined$Ticket) #no apparent meaning to the ticket
+table(titanic.combined$Fare)
+range(titanic.combined$Fare)#Range: $0 - $512
+median(titanic.combined$Fare) #Median $14.45
+table(titanic.combined$Cabin) #Seems to be sorted A, B, C, D, F, G, T
+
+#back to Embarked
+table(titanic.combined$Embarked)
+
+#assign the blanks to S
+#subset Embarked, and say that those equal to " " in the Embarked column will now be assigned "S"
+titanic.combined[titanic.combined$Embarked == "", "Embarked"] <- "S"
+
+#check
+table(titanic.combined$Embarked)
+#blanks have now been absorbed into S
+
+#data is cleaned. 
+
+#6. Make certain columns factors, aka "categorical casting"
+#Class, Sex, Embarked will become factors
+titanic.combined$Pclass <- as.factor(titanic.combined$Pclass)
+titanic.combined$Sex <- as.factor(titanic.combined$Sex)
+titanic.combined$Embarked <- as.factor(titanic.combined$Embarked)
+
+#check
+str(titanic.combined)
+#Class, Sex, and Embarked are all factors now
+
+#7. Ready to separate datasets
+titanic.train <- titanic.combined[titanic.combined$IsTrainSet == TRUE,]
+titanic.test <- titanic.combined[titanic.combined$IsTrainSet == FALSE,]
+
+#check train
+head(titanic.train)
+tail(titanic.train)
+nrow(titanic.train) #891
+str(titanic.train)
+summary(titanic.train)
+
+#check test
+head(titanic.test)
+tail(titanic.test)
+nrow(titanic.test) #418
+str(titanic.train)
+summary(titanic.test)
+
+#make Survived a factor for titanic.train
+titanic.train$Survived <- as.factor(titanic.train$Survived)
+
+#visualize train set
+
+install.packages("tidyverse")
+library(tidyverse)
+
+#Age vs. Fare
+#Point
+ggplot(titanic.train) +
+  geom_point(mapping = aes(x = Age, y = Fare, color = Survived))
+#Survied - 1 = yes; 0 = no
+
+#Survived by age 
+#Bar 
+ggplot(titanic.train) +
+  geom_bar(mapping = aes(x = Age, color = Survived))
+
+#Age, Fare, and Class
+#Point
+ggplot(titanic.train) +
+  geom_point(mapping = aes(x = Age, y = Fare, color = Pclass, shape = Pclass))
+
+#Age, Fare, Class
+#boxplot
+ggplot(titanic.train) +
+  geom_boxplot(mapping = aes(x = Age, y = Fare, color = Pclass))
+
+
+#trying out geom_point with other variables
+
+#Gender vs Fare
+#point
+ggplot(titanic.train) +
+  geom_point(mapping = aes(x = Sex, y = Fare, color = Survived))
+
+ggplot(titanic.train) +
+  geom_point(mapping = aes(x = Sex, y = , color = Survived))
+
+#Bar plot
+#Didn't work well with this: Cabin, Fare
+
+#Gender
+ggplot(titanic.train) +
+  geom_bar(mapping = aes(x = Sex, fill = Survived))
+
+#Class
+ggplot(titanic.train) +
+  geom_bar(mapping = aes(x = Pclass, fill = Survived))
+
+#How many siblings and/or spouse
+ggplot(titanic.train) +
+  geom_bar(mapping = aes(x = SibSp, fill = Survived))
+
+#How many parents/children with them
+ggplot(titanic.train) +
+  geom_bar(mapping = aes(x = Parch, fill = Survived))
+
+#Where they embarked
+ggplot(titanic.train) +
+  geom_bar(mapping = aes(x = Embarked, fill = Survived))
+
+
+
+
+ggplot(titanic.train) +
+  geom_point(mapping = aes(x = Embarked, y = Fare, color = Survived))
+
+#gender and parch
+ggplot(titanic.train) +
+  geom_bar(mapping = aes(x = Parch, color = Sex))
+
+ggplot(titanic.train) +
+  geom_bar(mapping = aes(x = Survived, fill = Sex))
+
+#did survivors have children?
+
+
+#gender and parch and survived
+ggplot(titanic.train) +
+  geom_point(mapping = aes(x = Embarked, y = Fare, color = Survived))
+
+
+#female/male per class
+ggplot(titanic.train) +
+  geom_bar(mapping = aes(x = Sex, fill = Survived)) +
+  facet_wrap(~Pclass)
+
+
+head(titanic.train$Ticket)
+titanic.train$Ticket
